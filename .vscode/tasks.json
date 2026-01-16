@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "AIVE: Git Auto Save",
+      "label": "DEVTOOLS: Git Auto Save",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -23,7 +23,7 @@
       "problemMatcher": []
     },
     {
-      "label": "AIVE: Replace from GitHub (preserve .vscode)",
+      "label": "DEVTOOLS: Replace from GitHub (preserve .vscode)",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -32,6 +32,24 @@
         "Bypass",
         "-File",
         "${workspaceFolder}\\.vscode\\github-replace-from-origin.ps1"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "DEVTOOLS: New Project (Scaffold + Create PUBLIC GitHub Repo + Push)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}\\.vscode\\new-project.ps1\" \"$(Read-Host 'ProjectName')\""
       ],
       "presentation": {
         "reveal": "always",

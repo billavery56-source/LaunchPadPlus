@@ -1,6 +1,7 @@
 # .vscode/new-project.ps1
-# One-click new project scaffold (folders + starter files + .vscode template)
-# Usage (in VS Code terminal): powershell -ExecutionPolicy Bypass -File .\.vscode\new-project.ps1 "ProjectName"
+# One-click: scaffold project + init git + create PUBLIC GitHub repo + push
+# Usage: powershell -ExecutionPolicy Bypass -File .\.vscode\new-project.ps1 "ProjectName"
+# Requires: Git installed, GitHub CLI installed, and `gh auth login` done once.
 
 param(
   [Parameter(Mandatory=$true)]
@@ -10,8 +11,26 @@ param(
 $ErrorActionPreference = "Stop"
 
 # ---------- CONFIG ----------
-$rootDir = "D:\My_Extensions"  # where new projects live
-$vsTemplateDir = "D:\My_Extensions\_TEMPLATE_VSCODE"  # <-- create this once
+$rootDir = "D:\My_Extensions"                     # where new projects live
+$vsTemplateDir = "D:\My_Extensions\_TEMPLATE_VSCODE" # create this once
+$githubOwner = "billavery56-source"               # your GitHub owner/org
+$visibility = "public"                            # fixed to public
+
+# ---------- Helpers ----------
+function Exec($cmd) {
+  Write-Host ">> $cmd" -ForegroundColor DarkGray
+  Invoke-Expression $cmd
+}
+
+function Get-GhPath {
+  $cmd = Get-Command gh -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+
+  $p = Join-Path $env:ProgramFiles "GitHub CLI\gh.exe"
+  if (Test-Path $p) { return $p }
+
+  return $null
+}
 
 # ---------- Paths ----------
 $projDir = Join-Path $rootDir $ProjectName
@@ -53,12 +72,11 @@ Thumbs.db
 
 Starter scaffold created by one-click script.
 
-## Folders
+Folders:
 - scripts/
 - styles/
 - icons/
 - .vscode/
-
 "@ | Set-Content -Path (Join-Path $projDir "README.md") -Encoding UTF8
 
 @"
@@ -109,5 +127,40 @@ Starter scaffold created by one-click script.
 </html>
 "@ | Set-Content -Path (Join-Path $projDir "popup.html") -Encoding UTF8
 
-Write-Host "Project scaffold created ✅" -ForegroundColor Green
-Write-Host "Open it in VS Code: code `"$projDir`"" -ForegroundColor DarkGray
+# ---------- Git init + first commit ----------
+Push-Location $projDir
+
+Exec "git init"
+Exec "git branch -M main"
+Exec "git add ."
+Exec "git commit -m `"Initial scaffold`""
+
+# ---------- GitHub repo create + push (PUBLIC) ----------
+$gh = Get-GhPath
+if (-not $gh) {
+  Write-Host "GitHub CLI (gh) not found. Repo not created automatically." -ForegroundColor Yellow
+  Write-Host "Install: winget install --id GitHub.cli -e" -ForegroundColor DarkGray
+  Write-Host "Then run once: gh auth login" -ForegroundColor DarkGray
+  Pop-Location
+  exit 0
+}
+
+# Confirm auth
+try {
+  & $gh auth status | Out-Null
+} catch {
+  Write-Host "gh is installed but not logged in. Run: gh auth login" -ForegroundColor Yellow
+  Pop-Location
+  exit 0
+}
+
+$repoFull = "$githubOwner/$ProjectName"
+Write-Host "Creating GitHub repo: $repoFull (PUBLIC)..." -ForegroundColor Cyan
+
+# This both creates the repo and pushes it
+& $gh repo create $repoFull --public --source=. --remote=origin --push
+
+Write-Host "Done ✅ Repo created + pushed: $repoFull" -ForegroundColor Green
+Pop-Location
+
+Write-Host "Open in VS Code: code `"$projDir`"" -ForegroundColor DarkGray

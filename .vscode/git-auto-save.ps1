@@ -1,53 +1,50 @@
 # .vscode/git-auto-save.ps1
-# One-click: init git (if needed) -> add -> commit -> push
-# Run from project root in VS Code task.
+# One-click: safe-directory -> init git (if needed) -> add -> commit -> pull -> push
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "LaunchPadPlus Git Auto Save..." -ForegroundColor Cyan
 
 # ---------- CONFIG ----------
-# Set this once. Example:
-# $repoUrl = "https://github.com/billavery56-source/LaunchPadPlus.git"
-$repoUrl = ""  # <-- PUT YOUR REPO URL HERE
+# Set once:
+$repoUrl = "https://github.com/billavery56-source/LaunchPadPlus.git"
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-# ---- Fix "dubious ownership" by marking this repo as safe ----
-try {
-  $repoPath = (Resolve-Path ".").Path
-  $repoPathForward = $repoPath -replace '\\','/'
-  git config --global --add safe.directory "$repoPathForward" 2>$null | Out-Null
-} catch {
-  # ignore; git will complain if it still isn't safe
-}
-
-
-# ---------- Helpers ----------
 function Exec($cmd) {
   Write-Host ">> $cmd" -ForegroundColor DarkGray
   Invoke-Expression $cmd
 }
 
+# ---------- Fix "dubious ownership" by marking this repo as safe ----------
+try {
+  $repoPath = (Resolve-Path ".").Path
+  $repoPathForward = $repoPath -replace '\\','/'
+  Exec "git config --global --add safe.directory `"$repoPathForward`""
+} catch {}
+
 # ---------- Ensure git repo ----------
 if (!(Test-Path ".git")) {
   Write-Host "No .git found. Initializing repository..." -ForegroundColor Yellow
   Exec "git init"
-  Exec "git branch -M main"
 }
 
-# ---------- Ensure origin remote ----------
-if ($repoUrl -and $repoUrl.Trim().Length -gt 0) {
-  $hasOrigin = $false
-  try {
-    $remotes = (git remote) 2>$null
-    if ($remotes -match "origin") { $hasOrigin = $true }
-  } catch { $hasOrigin = $false }
+# Ensure branch is main
+try { Exec "git branch -M main" } catch {}
 
-  if (-not $hasOrigin) {
-    Write-Host "Adding remote origin -> $repoUrl" -ForegroundColor Yellow
-    Exec "git remote add origin $repoUrl"
-  }
+# ---------- Ensure origin remote ----------
+$originExists = $false
+try {
+  $remotes = (git remote) 2>$null
+  if ($remotes -match "origin") { $originExists = $true }
+} catch { $originExists = $false }
+
+if (-not $originExists) {
+  Write-Host "Adding remote origin -> $repoUrl" -ForegroundColor Yellow
+  Exec "git remote add origin $repoUrl"
+} else {
+  # Keep origin correct
+  Exec "git remote set-url origin $repoUrl"
 }
 
 # ---------- Stage ----------
@@ -57,22 +54,23 @@ Exec "git add ."
 $status = (git status --porcelain) 2>$null
 if ([string]::IsNullOrWhiteSpace($status)) {
   Write-Host "No changes to commit." -ForegroundColor Yellow
-  exit 0
+} else {
+  Exec "git commit -m `"Auto save $timestamp`""
 }
 
-Exec "git commit -m `"Auto save $timestamp`""
-
-# ---------- Push (only if origin exists) ----------
-$originExists = $false
+# ---------- Pull remote changes (safe even if already up-to-date) ----------
 try {
-  $remotes = (git remote) 2>$null
-  if ($remotes -match "origin") { $originExists = $true }
-} catch { $originExists = $false }
+  Exec "git fetch origin"
+  Exec "git pull origin main --allow-unrelated-histories -m `"Auto-merge remote main`""
+} catch {
+  Write-Host "Pull step skipped/failed (often OK): $($_.Exception.Message)" -ForegroundColor Yellow
+}
 
-if ($originExists) {
+# ---------- Push ----------
+try {
   Exec "git push -u origin main"
-  Write-Host "Auto-save complete: pushed to origin/main" -ForegroundColor Green
-} else {
-  Write-Host "Auto-save complete: committed locally (no origin remote set)." -ForegroundColor Green
-  Write-Host "Set `$repoUrl in .vscode/git-auto-save.ps1 to enable push." -ForegroundColor DarkGray
+  Write-Host "Auto-save complete: pushed to origin/main ✅" -ForegroundColor Green
+} catch {
+  Write-Host "Push failed: $($_.Exception.Message)" -ForegroundColor Red
+  exit 1
 }
