@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "LaunchPadPlus (DEV CLEAN)",
+  "version": "1.0.0",
+  "description": "Clean-slate dev build for LaunchPadPlus new tab.",
+  "permissions": ["storage"],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LaunchPadPlus DEV"
+  }
+}

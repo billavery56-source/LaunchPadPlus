@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LaunchPadPlus (DEV CLEAN)</title>
+    <script src="scripts/boot.js" defer></script>
+  </head>
+
+  <body>
+    <div id="app"></div>
+
+    <!-- Name prompt modal -->
+    <div id="lp-modal-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-modal-backdrop"></div>
+      <section id="lp-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus dialog">
+        <header id="lp-modal-header">
+          <div id="lp-modal-title">Dialog</div>
+          <button id="lp-modal-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-modal-body">
+          <label id="lp-modal-label" for="lp-modal-input">Name</label>
+          <input id="lp-modal-input" type="text" autocomplete="off" />
+          <div id="lp-modal-hint" class="lp-hint"></div>
+        </div>
+
+        <footer id="lp-modal-footer">
+          <button id="lp-modal-cancel" type="button" class="lp-btn">Cancel</button>
+          <button id="lp-modal-save" type="button" class="lp-btn primary">Save</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Tile editor modal -->
+    <div id="lp-tile-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-tile-backdrop"></div>
+      <section id="lp-tile-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus tile dialog">
+        <header id="lp-tile-header">
+          <div id="lp-tile-title">Add Tile</div>
+          <button id="lp-tile-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-tile-body">
+          <label for="lp-tile-name">Title</label>
+          <input id="lp-tile-name" type="text" autocomplete="off" placeholder="e.g., Amazon" />
+
+          <label for="lp-tile-url">URL</label>
+          <input id="lp-tile-url" type="text" autocomplete="off" placeholder="https://..." />
+
+          <label for="lp-tile-icon">Icon (optional)</label>
+          <input id="lp-tile-icon" type="text" autocomplete="off" placeholder="(auto favicon unless you pick one)" />
+
+          <div class="lp-icon-row">
+            <img id="lp-tile-icon-preview" class="lp-icon-preview" alt="" />
+            <div class="lp-icon-actions">
+              <button id="lp-tile-icon-pick" type="button" class="lp-btn">Choose icon…</button>
+              <button id="lp-tile-icon-clear" type="button" class="lp-btn">Clear</button>
+              <input id="lp-tile-icon-file" type="file" accept="image/*" style="display:none;" />
+            </div>
+          </div>
+
+          <div class="lp-hint" id="lp-tile-hint">
+            If you don’t choose an icon, we’ll use the site favicon.
+          </div>
+        </div>
+
+        <footer id="lp-tile-footer">
+          <button id="lp-tile-delete" type="button" class="lp-btn danger">Delete</button>
+          <div class="lp-spacer"></div>
+          <button id="lp-tile-cancel" type="button" class="lp-btn">Cancel</button>
+          <button id="lp-tile-save" type="button" class="lp-btn primary">Save</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Label editor modal (RIGHT-CLICK) -->
+    <div id="lp-label-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-label-backdrop"></div>
+      <section id="lp-label-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus label dialog">
+        <header id="lp-label-header">
+          <div id="lp-label-title">Edit</div>
+          <button id="lp-label-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-label-body">
+          <label for="lp-label-input">Name</label>
+          <input id="lp-label-input" type="text" autocomplete="off" />
+        </div>
+
+        <footer id="lp-label-footer">
+          <button id="lp-label-delete" type="button" class="lp-btn danger">Delete</button>
+          <div class="lp-spacer"></div>
+          <button id="lp-label-cancel" type="button" class="lp-btn">Cancel</button>
+          <button id="lp-label-save" type="button" class="lp-btn primary">Save</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Toast -->
+    <div id="lp-toast" class="lp-toast" aria-live="polite"></div>
+  </body>
+</html>

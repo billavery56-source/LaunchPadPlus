@@ -1,0 +1,132 @@
+#app { padding: 14px; }
+
+/* Row: label | chips (with + inside) */
+.lp-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #0d0d0d;
+  border: 1px solid #222;
+  margin-bottom: 10px;
+}
+
+.lp-row-left { font-weight: 900; opacity: .9; }
+
+.lp-row-mid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.lp-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.lp-chip:hover { background: #1e1e1e; }
+
+.lp-chip.selected {
+  border-color: #5a3a12;
+  box-shadow: 0 0 0 3px rgba(90,58,18,.35);
+}
+
+.lp-chip.add {
+  width: 44px;
+  text-align: center;
+  font-size: 18px;
+  padding: 6px 0;
+}
+
+/* ===== Tiles area =====
+   - NO background
+   - starts top-left
+   - padding around the grid
+   - space between tiles
+*/
+.lp-tiles {
+  margin-top: 14px;
+  padding: 0;            /* no container padding */
+  background: transparent; /* no background */
+  border: none;          /* no border */
+}
+
+/* Grid starts upper-left with padding and spacing */
+.lp-tile-grid {
+  padding: 14px; /* "not completely in the corner" */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  gap: 14px;              /* margin/space between tiles */
+  justify-content: start; /* left */
+  align-content: start;   /* top */
+}
+
+/* Empty: still upper-left (no centering) */
+.lp-tile-grid.empty {
+  min-height: 260px;      /* just gives some breathing room */
+}
+
+/* Tile card 200x200 */
+.lp-tile {
+  width: 200px;
+  height: 200px;
+  border: 1px solid #2a2a2a;
+  background: #121212;
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+  color: #fff;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.lp-tile:hover { background: #171717; }
+
+.lp-tile-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: #0b0b0b;
+  border: 1px solid #2a2a2a;
+}
+
+.lp-tile-title {
+  width: 100%;
+  font-weight: 900;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Plus tile: NO background */
+.lp-plus-tile {
+  background: transparent !important;
+  border: 1px dashed #2a2a2a;
+}
+
+.lp-plus-tile:hover {
+  background: transparent !important;
+  border-color: #5a3a12;
+}
+
+.lp-plus {
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.9;
+}
