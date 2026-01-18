@@ -35,13 +35,17 @@ function buildTileCard(tile) {
   btn.dataset.lpEditKind = "tile";
   btn.dataset.lpEditId = tile.id;
 
-  // DnD (THIS is what makes tile dragging possible)
+  // DnD
   btn.dataset.lpDndType = "tile";
   btn.dataset.lpDndId = tile.id;
 
   const img = document.createElement("img");
   img.className = "lp-tile-icon";
   img.alt = "";
+
+  // ✅ STOP native browser drag on images (this was causing the 🚫 cursor)
+  img.draggable = false;
+  img.addEventListener("dragstart", (e) => e.preventDefault());
 
   const iconUrl = tile.icon?.trim()
     ? tile.icon.trim()
@@ -168,8 +172,6 @@ export function render() {
   if (tiles.length === 0) grid.classList.add("empty");
 
   tiles.forEach((tile) => grid.appendChild(buildTileCard(tile)));
-
-  // + tile always last
   grid.appendChild(buildPlusTile());
 
   tilesWrap.appendChild(grid);
