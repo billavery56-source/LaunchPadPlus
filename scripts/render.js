@@ -142,8 +142,9 @@ export function render() {
   grid.className = "lp-tile-grid";
   if (tiles.length === 0) grid.classList.add("empty");
 
-  grid.appendChild(buildPlusTile());
+  // Put the + tile LAST (always)
   tiles.forEach((tile) => grid.appendChild(buildTileCard(tile)));
+  grid.appendChild(buildPlusTile());
 
   tilesWrap.appendChild(grid);
   app.appendChild(tilesWrap);

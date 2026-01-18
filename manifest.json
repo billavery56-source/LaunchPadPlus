@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LaunchPadPlus (DEV CLEAN)",
+  "name": "LaunchPadPlus",
   "version": "1.0.0",
   "description": "Clean-slate dev build for LaunchPadPlus new tab.",
   "permissions": ["storage"],
@@ -9,6 +9,6 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "LaunchPadPlus DEV"
+    "default_title": "LaunchPadPlus"
   }
 }

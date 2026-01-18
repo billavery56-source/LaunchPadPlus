@@ -5,6 +5,37 @@ function uid(prefix) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function isAllLabel(name) {
+  return (name || "").trim().toLowerCase() === "all";
+}
+
+function findTileAndParent(tileId) {
+  if (!state?.categories) return null;
+  for (const c of state.categories) {
+    for (const t of (c.tabs || [])) {
+      for (const s of (t.subtabs || [])) {
+        const tiles = Array.isArray(s.tiles) ? s.tiles : [];
+        const tile = tiles.find(x => x.id === tileId);
+        if (tile) return { tile, subtab: s, tab: t, category: c };
+      }
+    }
+  }
+  return null;
+}
+
+function getAllTilesInCategory(catId) {
+  const c = findCategory(catId);
+  if (!c) return [];
+  const out = [];
+  for (const t of (c.tabs || [])) {
+    for (const s of (t.subtabs || [])) {
+      const tiles = Array.isArray(s.tiles) ? s.tiles : [];
+      for (const tile of tiles) out.push(tile);
+    }
+  }
+  return out;
+}
+
 export function getState() { return state; }
 
 export function setState(next) {
@@ -176,26 +207,31 @@ export function addTile({ title, url, icon }) {
 }
 
 export function updateTile(tileId, { title, url, icon }) {
-  const sub = findSubTab(state.selectedCategoryId, state.selectedTabId, state.selectedSubTabId);
-  if (!sub) return false;
-  const tile = sub.tiles.find(t => t.id === tileId);
-  if (!tile) return false;
-  tile.title = title;
-  tile.url = url;
-  tile.icon = icon || "";
+  const hit = findTileAndParent(tileId);
+  if (!hit) return false;
+  hit.tile.title = title;
+  hit.tile.url = url;
+  hit.tile.icon = icon || "";
   return true;
 }
 
 export function deleteTile(tileId) {
-  const sub = findSubTab(state.selectedCategoryId, state.selectedTabId, state.selectedSubTabId);
-  if (!sub) return false;
-  const idx = sub.tiles.findIndex(t => t.id === tileId);
+  const hit = findTileAndParent(tileId);
+  if (!hit) return false;
+  const idx = hit.subtab.tiles.findIndex(t => t.id === tileId);
   if (idx === -1) return false;
-  sub.tiles.splice(idx, 1);
+  hit.subtab.tiles.splice(idx, 1);
   return true;
 }
 
 export function getTilesForSelection() {
+  const c = findCategory(state.selectedCategoryId);
+  if (!c) return [];
+  const t = c.tabs.find(x => x.id === state.selectedTabId) || null;
+  if (t && isAllLabel(t.name)) {
+    // "All" tab means: show every tile in the selected Category (across all tabs/subtabs).
+    return getAllTilesInCategory(c.id);
+  }
   const sub = findSubTab(state.selectedCategoryId, state.selectedTabId, state.selectedSubTabId);
   return sub?.tiles || [];
 }
