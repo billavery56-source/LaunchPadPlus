@@ -42,7 +42,6 @@
         </header>
 
         <div id="lp-tile-body">
-          <!-- Location -->
           <div class="lp-fieldset">
             <div class="lp-fieldset-title">Location</div>
 
@@ -56,7 +55,6 @@
             <select id="lp-tile-subtab"></select>
           </div>
 
-          <!-- Content -->
           <label for="lp-tile-name">Title</label>
           <input id="lp-tile-name" type="text" autocomplete="off" placeholder="e.g., Best Buy" />
 
@@ -89,7 +87,7 @@
       </section>
     </div>
 
-    <!-- Label editor modal (RIGHT-CLICK) -->
+    <!-- Label editor modal -->
     <div id="lp-label-root" class="lp-hidden" aria-hidden="true" style="display:none;">
       <div id="lp-label-backdrop"></div>
       <section id="lp-label-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus label dialog">
@@ -102,7 +100,6 @@
           <label for="lp-label-input">Name</label>
           <input id="lp-label-input" type="text" autocomplete="off" />
 
-          <!-- Only shown when editing a TAB -->
           <div id="lp-label-category-row" class="lp-hidden">
             <label for="lp-label-category">Category</label>
             <select id="lp-label-category"></select>
@@ -114,6 +111,111 @@
           <div class="lp-spacer"></div>
           <button id="lp-label-cancel" type="button" class="lp-btn">Cancel</button>
           <button id="lp-label-save" type="button" class="lp-btn primary">Save</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Backup dialog (keep your existing) -->
+    <div id="lp-backup-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-backup-backdrop"></div>
+      <section id="lp-backup-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus backup dialog">
+        <header id="lp-backup-header">
+          <div id="lp-backup-title">Backup & Restore</div>
+          <button id="lp-backup-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-backup-body">
+          <div class="lp-hint">
+            Tip: If you’ve got an external drive, saving backups there is a great idea.
+          </div>
+
+          <div class="lp-backup-row">
+            <div class="lp-backup-label">Backup file</div>
+            <div class="lp-backup-value" id="lp-backup-file-label">(not set)</div>
+          </div>
+
+          <div class="lp-backup-actions">
+            <button id="lp-backup-choose" type="button" class="lp-btn">Choose file…</button>
+            <button id="lp-backup-save" type="button" class="lp-btn primary">Save backup now</button>
+            <button id="lp-backup-load" type="button" class="lp-btn">Load backup…</button>
+          </div>
+
+          <div class="lp-backup-row">
+            <label class="lp-check">
+              <input id="lp-backup-auto" type="checkbox" />
+              <span>Auto-save on every change</span>
+            </label>
+          </div>
+
+          <div class="lp-hint">
+            Auto-save uses the same chosen file. First time you enable it, you’ll be asked to choose where to save.
+          </div>
+        </div>
+
+        <footer id="lp-backup-footer">
+          <div class="lp-spacer"></div>
+          <button id="lp-backup-close" type="button" class="lp-btn">Close</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Theme dialog -->
+    <div id="lp-theme-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-theme-backdrop"></div>
+      <section id="lp-theme-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus theme dialog">
+        <header id="lp-theme-header">
+          <div id="lp-theme-title">Theme</div>
+          <button id="lp-theme-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-theme-body">
+          <div class="lp-hint">Pick a preset, or choose any background color and LaunchPadPlus will auto-build the rest with contrast.</div>
+
+          <div class="lp-fieldset">
+            <div class="lp-fieldset-title">Mode</div>
+
+            <label class="lp-check">
+              <input type="radio" name="lp-theme-mode" value="preset" />
+              <span>Preset</span>
+            </label>
+
+            <label class="lp-check">
+              <input type="radio" name="lp-theme-mode" value="custom" />
+              <span>Custom background color</span>
+            </label>
+          </div>
+
+          <div id="lp-theme-preset-wrap" class="lp-fieldset" style="display:none;">
+            <div class="lp-fieldset-title">Preset</div>
+
+            <label class="lp-check">
+              <input type="radio" name="lp-theme-preset" value="dark" />
+              <span>Dark</span>
+            </label>
+
+            <label class="lp-check">
+              <input type="radio" name="lp-theme-preset" value="medium" />
+              <span>Medium</span>
+            </label>
+
+            <label class="lp-check">
+              <input type="radio" name="lp-theme-preset" value="light" />
+              <span>Light</span>
+            </label>
+          </div>
+
+          <div id="lp-theme-custom-wrap" class="lp-fieldset" style="display:none;">
+            <div class="lp-fieldset-title">Custom</div>
+            <label for="lp-theme-color">Background color</label>
+            <input id="lp-theme-color" type="color" value="#1a1a1a" />
+            <div class="lp-hint">Everything else (panels, chips, borders, text) is derived automatically for contrast.</div>
+          </div>
+        </div>
+
+        <footer id="lp-theme-footer">
+          <div class="lp-spacer"></div>
+          <button id="lp-theme-close" type="button" class="lp-btn">Close</button>
+          <button id="lp-theme-save" type="button" class="lp-btn primary">Done</button>
         </footer>
       </section>
     </div>

@@ -20,8 +20,6 @@ function buildPlusTile() {
   plus.className = "lp-plus";
   plus.textContent = "+";
   btn.appendChild(plus);
-
-  // IMPORTANT: no DnD dataset on the + tile
   return btn;
 }
 
@@ -30,20 +28,16 @@ function buildTileCard(tile) {
   btn.className = "lp-tile";
   btn.type = "button";
 
-  // open/edit
   btn.dataset.lpTileOpen = tile.id;
   btn.dataset.lpEditKind = "tile";
   btn.dataset.lpEditId = tile.id;
 
-  // DnD
   btn.dataset.lpDndType = "tile";
   btn.dataset.lpDndId = tile.id;
 
   const img = document.createElement("img");
   img.className = "lp-tile-icon";
   img.alt = "";
-
-  // ✅ STOP native browser drag on images (this was causing the 🚫 cursor)
   img.draggable = false;
   img.addEventListener("dragstart", (e) => e.preventDefault());
 
@@ -71,11 +65,10 @@ export function render() {
   const st = getState();
   const { c, t } = getSelected();
   const tiles = getTilesForSelection();
-
   const app = document.getElementById("app");
   app.innerHTML = "";
 
-  const makeRow = (titleText) => {
+  const makeRow = (titleText, withRight = false) => {
     const row = document.createElement("div");
     row.className = "lp-row";
 
@@ -87,13 +80,27 @@ export function render() {
     mid.className = "lp-row-mid";
 
     row.append(left, mid);
+
+    let right = null;
+    if (withRight) {
+      right = document.createElement("div");
+      right.className = "lp-row-right";
+      row.appendChild(right);
+    } else {
+      right = document.createElement("div");
+      right.className = "lp-row-right";
+      row.appendChild(right);
+      right.style.visibility = "hidden";
+    }
+
     app.appendChild(row);
-    return mid;
+    return { mid, right };
   };
 
-  // Categories
+  // Categories (with indicator + buttons)
   {
-    const mid = makeRow("Categories");
+    const { mid, right } = makeRow("Categories", true);
+
     st.categories.forEach((cat) => {
       const locked = (cat.name || "").trim().toLowerCase() === "general";
       mid.appendChild(
@@ -101,7 +108,6 @@ export function render() {
           lpSelectCategory: cat.id,
           lpEditKind: "category",
           lpEditId: cat.id,
-
           lpDndType: "category",
           lpDndId: cat.id,
           lpDndLocked: locked ? "1" : "0"
@@ -113,11 +119,31 @@ export function render() {
     add.id = "lp-add-category";
     add.classList.add("add");
     mid.appendChild(add);
+
+    const indicator = document.createElement("div");
+    indicator.id = "lp-save-indicator";
+    indicator.className = "lp-indicator off";
+    indicator.textContent = "Auto: Off";
+    indicator.title = "Auto-save status";
+
+    const backupBtn = document.createElement("button");
+    backupBtn.id = "lp-backup-btn";
+    backupBtn.className = "lp-btn";
+    backupBtn.type = "button";
+    backupBtn.textContent = "Backup";
+
+    const themeBtn = document.createElement("button");
+    themeBtn.id = "lp-theme-btn";
+    themeBtn.className = "lp-btn";
+    themeBtn.type = "button";
+    themeBtn.textContent = "Theme";
+
+    right.append(indicator, backupBtn, themeBtn);
   }
 
   // Tabs
   {
-    const mid = makeRow("Tabs");
+    const { mid } = makeRow("Tabs");
     (c?.tabs || []).forEach((tab) => {
       const locked = (tab.name || "").trim().toLowerCase() === "all";
       mid.appendChild(
@@ -125,7 +151,6 @@ export function render() {
           lpSelectTab: tab.id,
           lpEditKind: "tab",
           lpEditId: tab.id,
-
           lpDndType: "tab",
           lpDndId: tab.id,
           lpDndLocked: locked ? "1" : "0"
@@ -141,7 +166,7 @@ export function render() {
 
   // Sub-tabs
   {
-    const mid = makeRow("Sub-tabs");
+    const { mid } = makeRow("Sub-tabs");
     (t?.subtabs || []).forEach((sub) => {
       const locked = (sub.name || "").trim().toLowerCase() === "all";
       mid.appendChild(
@@ -149,7 +174,6 @@ export function render() {
           lpSelectSubtab: sub.id,
           lpEditKind: "subtab",
           lpEditId: sub.id,
-
           lpDndType: "subtab",
           lpDndId: sub.id,
           lpDndLocked: locked ? "1" : "0"

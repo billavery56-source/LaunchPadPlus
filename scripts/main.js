@@ -6,6 +6,7 @@ import { loadState, saveState, resetState } from "./storage.js";
 import {
   ensureDefaultState,
   getState,
+  setState,
   getSelected,
   getTilesForSelection,
   selectCategory,
@@ -29,6 +30,8 @@ import {
 } from "./state.js";
 import { render } from "./render.js";
 import { initDnd } from "./dnd.js";
+import { initBackup, openBackupDialog, notifyStateChanged, bindAutoSaveIndicator } from "./backup.js";
+import { initTheme, openThemeDialog, applySavedTheme } from "./theme.js";
 
 function guessUrlFromTabName(name) {
   const n = (name || "").trim();
@@ -51,22 +54,28 @@ function defaultsFromSelectedTab() {
 
 function getElementTarget(raw) {
   if (!raw) return null;
-  if (raw.nodeType === 1) return raw; // Element
-  if (raw.nodeType === 3) return raw.parentElement; // Text
+  if (raw.nodeType === 1) return raw;
+  if (raw.nodeType === 3) return raw.parentElement;
   return raw.parentElement || null;
 }
 
-async function refresh() {
+async function refresh({ changed = true } = {}) {
   render();
+
+  // Buttons recreated on render
+  document.getElementById("lp-backup-btn")?.addEventListener("click", () => openBackupDialog());
+  document.getElementById("lp-theme-btn")?.addEventListener("click", () => openThemeDialog());
+
+  // Indicator recreated on render
+  bindAutoSaveIndicator(document.getElementById("lp-save-indicator"));
+
   await saveState();
+
+  if (changed) notifyStateChanged();
 }
 
 async function onAddCategory() {
-  const name = await promptName({
-    title: "Add New Category",
-    label: "Category name",
-    placeholder: "e.g., Shopping"
-  });
+  const name = await promptName({ title: "Add New Category", label: "Category name", placeholder: "e.g., Shopping" });
   if (!name) return;
   addCategory(name);
   toast("Category added.");
@@ -75,15 +84,8 @@ async function onAddCategory() {
 
 async function onAddTab() {
   const st = getState();
-  if (!st.selectedCategoryId) {
-    toast("Select a Category first.");
-    return;
-  }
-  const name = await promptName({
-    title: "Add New Tab",
-    label: "Tab name",
-    placeholder: "e.g., Best Buy"
-  });
+  if (!st.selectedCategoryId) return toast("Select a Category first.");
+  const name = await promptName({ title: "Add New Tab", label: "Tab name", placeholder: "e.g., Best Buy" });
   if (!name) return;
   addTab(name);
   toast("Tab added.");
@@ -92,15 +94,8 @@ async function onAddTab() {
 
 async function onAddSubTab() {
   const st = getState();
-  if (!st.selectedCategoryId || !st.selectedTabId) {
-    toast("Select a Category and a Tab first.");
-    return;
-  }
-  const name = await promptName({
-    title: "Add New Sub-Tab",
-    label: "Sub-Tab name",
-    placeholder: "e.g., Deals"
-  });
+  if (!st.selectedCategoryId || !st.selectedTabId) return toast("Select a Category and a Tab first.");
+  const name = await promptName({ title: "Add New Sub-Tab", label: "Sub-Tab name", placeholder: "e.g., Deals" });
   if (!name) return;
   addSubTab(name);
   toast("Sub-Tab added.");
@@ -109,14 +104,8 @@ async function onAddSubTab() {
 
 async function onAddTile() {
   const st = getState();
-  if (!st.selectedCategoryId) {
-    toast("Select a Category first.");
-    return;
-  }
-  if (!st.selectedTabId) {
-    toast("Select a Tab first.");
-    return;
-  }
+  if (!st.selectedCategoryId) return toast("Select a Category first.");
+  if (!st.selectedTabId) return toast("Select a Tab first.");
 
   const defs = defaultsFromSelectedTab();
   const result = await openTileDialog({ mode: "add", defaults: defs });
@@ -133,23 +122,17 @@ async function onEditTile(tileId) {
   if (!tile) return;
 
   const beforeLoc = getTileLocation(tileId);
-
   const result = await openTileDialog({ mode: "edit", tile });
   if (!result) return;
 
   if (result.action === "save") {
-    // Move first (if needed), then update fields
     const dest = result.destination;
     if (dest && beforeLoc) {
       const changed =
         dest.categoryId !== beforeLoc.categoryId ||
         dest.tabId !== beforeLoc.tabId ||
         dest.subtabId !== beforeLoc.subtabId;
-
-      if (changed) {
-        const ok = moveTileTo(tileId, dest.categoryId, dest.tabId, dest.subtabId);
-        if (!ok) toast("Could not move tile to that destination.");
-      }
+      if (changed) moveTileTo(tileId, dest.categoryId, dest.tabId, dest.subtabId);
     }
 
     updateTile(tileId, { title: result.title, url: result.url, icon: result.icon });
@@ -165,10 +148,7 @@ async function onEditTile(tileId) {
 function openTile(tileId) {
   const tiles = getTilesForSelection();
   const tile = tiles.find(t => t.id === tileId);
-  if (!tile?.url) {
-    toast("This tile has no URL.");
-    return;
-  }
+  if (!tile?.url) return toast("This tile has no URL.");
   window.open(tile.url, "_blank", "noopener,noreferrer");
 }
 
@@ -198,14 +178,12 @@ async function onRightClickEdit(kind, id) {
 
   if (result.action === "save") {
     if (kind === "category") renameCategory(id, result.name);
-
     if (kind === "tab") {
       renameTab(id, result.name);
       if (result.categoryId && result.categoryId !== currentCategoryId) {
         moveTabToCategory(id, result.categoryId);
       }
     }
-
     if (kind === "subtab") renameSubTab(id, result.name);
 
     toast("Saved.");
@@ -232,18 +210,9 @@ function wireEvents() {
       if (btn?.id === "lp-add-subtab") return await onAddSubTab();
       if (btn?.id === "lp-add-tile") return await onAddTile();
 
-      if (btn?.dataset?.lpSelectCategory) {
-        selectCategory(btn.dataset.lpSelectCategory);
-        return await refresh();
-      }
-      if (btn?.dataset?.lpSelectTab) {
-        selectTab(btn.dataset.lpSelectTab);
-        return await refresh();
-      }
-      if (btn?.dataset?.lpSelectSubtab) {
-        selectSubTab(btn.dataset.lpSelectSubtab);
-        return await refresh();
-      }
+      if (btn?.dataset?.lpSelectCategory) { selectCategory(btn.dataset.lpSelectCategory); return await refresh(); }
+      if (btn?.dataset?.lpSelectTab) { selectTab(btn.dataset.lpSelectTab); return await refresh(); }
+      if (btn?.dataset?.lpSelectSubtab) { selectSubTab(btn.dataset.lpSelectSubtab); return await refresh(); }
 
       const tileEl = el?.closest?.("[data-lp-tile-open]");
       if (tileEl?.dataset?.lpTileOpen) return openTile(tileEl.dataset.lpTileOpen);
@@ -263,7 +232,6 @@ function wireEvents() {
 
     e.preventDefault();
     e.stopPropagation();
-
     return onRightClickEdit(kind, id);
   }, true);
 
@@ -284,10 +252,21 @@ async function boot() {
   initLabelDialog();
   initDnd({ refresh });
 
+  // Theme (apply saved + hook theme dialog)
+  await initTheme();
+  await applySavedTheme();
+
   await loadState();
   ensureDefaultState();
+
+  await initBackup({
+    getState,
+    setState: (s) => setState(s),
+    refresh: () => refresh({ changed: false })
+  });
+
   wireEvents();
-  await refresh();
+  await refresh({ changed: false });
 }
 
 boot();
