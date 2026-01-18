@@ -22,11 +22,15 @@ import {
   renameTab,
   deleteTab,
   renameSubTab,
-  deleteSubTab
+  deleteSubTab,
+  getTileLocation,
+  moveTileTo,
+  moveTabToCategory
 } from "./state.js";
 import { render } from "./render.js";
+import { initDnd } from "./dnd.js";
 
-function guessUrlFromName(name) {
+function guessUrlFromTabName(name) {
   const n = (name || "").trim();
   if (!n) return "";
   if (n.toLowerCase() === "all") return "";
@@ -39,43 +43,22 @@ function guessUrlFromName(name) {
 
 function defaultsFromSelectedTab() {
   const { t } = getSelected();
-  const tabName = (t?.name || "").trim();
+  const tabName = t?.name || "";
   const title = tabName.toLowerCase() === "all" ? "" : tabName;
-  const url = guessUrlFromName(title);
+  const url = tabName.toLowerCase() === "all" ? "" : guessUrlFromTabName(tabName);
   return { title, url, icon: "", tabName };
 }
 
 function getElementTarget(raw) {
   if (!raw) return null;
   if (raw.nodeType === 1) return raw; // Element
-  if (raw.nodeType === 3) return raw.parentElement; // Text node
+  if (raw.nodeType === 3) return raw.parentElement; // Text
   return raw.parentElement || null;
 }
 
 async function refresh() {
   render();
-  bindStaticButtons();     // these exist in DOM after render
-  bindDynamicButtons();    // the + tile is recreated each render
   await saveState();
-}
-
-function bindStaticButtons() {
-  // (Optional future: static header buttons, etc.)
-}
-
-function bindDynamicButtons() {
-  // These nodes are recreated by render(), so bind after every render.
-  const addCat = document.getElementById("lp-add-category");
-  if (addCat) addCat.onclick = () => onAddCategory();
-
-  const addTabBtn = document.getElementById("lp-add-tab");
-  if (addTabBtn) addTabBtn.onclick = () => onAddTab();
-
-  const addSub = document.getElementById("lp-add-subtab");
-  if (addSub) addSub.onclick = () => onAddSubTab();
-
-  const addTileBtn = document.getElementById("lp-add-tile");
-  if (addTileBtn) addTileBtn.onclick = () => onAddTile(); // <-- the important one
 }
 
 async function onAddCategory() {
@@ -99,7 +82,7 @@ async function onAddTab() {
   const name = await promptName({
     title: "Add New Tab",
     label: "Tab name",
-    placeholder: "e.g., Amazon"
+    placeholder: "e.g., Best Buy"
   });
   if (!name) return;
   addTab(name);
@@ -125,17 +108,6 @@ async function onAddSubTab() {
 }
 
 async function onAddTile() {
-  // Visible proof that the click fired
-  // (If you see this toast but no dialog, it’s a dialog visibility issue, not the click.)
-  toast("Opening Add Tile…", 900);
-
-  const tileRoot = document.getElementById("lp-tile-root");
-  if (!tileRoot) {
-    toast("Missing tile dialog container (#lp-tile-root).");
-    console.error("Missing #lp-tile-root");
-    return;
-  }
-
   const st = getState();
   if (!st.selectedCategoryId) {
     toast("Select a Category first.");
@@ -150,15 +122,6 @@ async function onAddTile() {
   const result = await openTileDialog({ mode: "add", defaults: defs });
   if (!result) return;
 
-  const { t } = getSelected();
-  const tabName = (t?.name || "").toLowerCase();
-  const urlRequired = tabName !== "all";
-
-  if (urlRequired && !result.url) {
-    toast("URL is required for this tab.");
-    return;
-  }
-
   addTile({ title: result.title, url: result.url, icon: result.icon });
   toast("Tile added.");
   await refresh();
@@ -166,15 +129,31 @@ async function onAddTile() {
 
 async function onEditTile(tileId) {
   const tiles = getTilesForSelection();
-  const tile = tiles.find((x) => x.id === tileId);
+  const tile = tiles.find(t => t.id === tileId);
   if (!tile) return;
+
+  const beforeLoc = getTileLocation(tileId);
 
   const result = await openTileDialog({ mode: "edit", tile });
   if (!result) return;
 
   if (result.action === "save") {
+    // Move first (if needed), then update fields
+    const dest = result.destination;
+    if (dest && beforeLoc) {
+      const changed =
+        dest.categoryId !== beforeLoc.categoryId ||
+        dest.tabId !== beforeLoc.tabId ||
+        dest.subtabId !== beforeLoc.subtabId;
+
+      if (changed) {
+        const ok = moveTileTo(tileId, dest.categoryId, dest.tabId, dest.subtabId);
+        if (!ok) toast("Could not move tile to that destination.");
+      }
+    }
+
     updateTile(tileId, { title: result.title, url: result.url, icon: result.icon });
-    toast("Tile updated.");
+    toast("Tile saved.");
     await refresh();
   } else if (result.action === "delete") {
     deleteTile(tileId);
@@ -185,7 +164,7 @@ async function onEditTile(tileId) {
 
 function openTile(tileId) {
   const tiles = getTilesForSelection();
-  const tile = tiles.find((x) => x.id === tileId);
+  const tile = tiles.find(t => t.id === tileId);
   if (!tile?.url) {
     toast("This tile has no URL.");
     return;
@@ -193,90 +172,87 @@ function openTile(tileId) {
   window.open(tile.url, "_blank", "noopener,noreferrer");
 }
 
-async function onEditLabel(kind, id) {
+async function onRightClickEdit(kind, id) {
   const st = getState();
+  const { c, t } = getSelected();
+
+  if (kind === "tile") return onEditTile(id);
+
+  let currentName = "";
+  let currentCategoryId = st.selectedCategoryId;
+
   if (kind === "category") {
-    const c = st.categories.find((x) => x.id === id);
-    const name = await openLabelDialog({ title: "Edit Category", value: c?.name || "" });
-    if (!name) return;
-    renameCategory(id, name);
-    toast("Category renamed.");
+    const cat = st.categories.find(x => x.id === id);
+    currentName = cat?.name || "";
+  } else if (kind === "tab") {
+    const tab = c?.tabs?.find(x => x.id === id);
+    currentName = tab?.name || "";
+    currentCategoryId = c?.id || st.selectedCategoryId;
+  } else if (kind === "subtab") {
+    const sub = t?.subtabs?.find(x => x.id === id);
+    currentName = sub?.name || "";
+  }
+
+  const result = await openLabelDialog({ kind, currentName, currentCategoryId });
+  if (!result) return;
+
+  if (result.action === "save") {
+    if (kind === "category") renameCategory(id, result.name);
+
+    if (kind === "tab") {
+      renameTab(id, result.name);
+      if (result.categoryId && result.categoryId !== currentCategoryId) {
+        moveTabToCategory(id, result.categoryId);
+      }
+    }
+
+    if (kind === "subtab") renameSubTab(id, result.name);
+
+    toast("Saved.");
     await refresh();
-    return;
   }
 
-  if (kind === "tab") {
-    const { c } = getSelected();
-    const t = c?.tabs?.find((x) => x.id === id);
-    const name = await openLabelDialog({ title: "Edit Tab", value: t?.name || "" });
-    if (!name) return;
-    renameTab(id, name);
-    toast("Tab renamed.");
+  if (result.action === "delete") {
+    if (kind === "category") deleteCategory(id);
+    if (kind === "tab") deleteTab(id);
+    if (kind === "subtab") deleteSubTab(id);
+    toast("Deleted.");
     await refresh();
-    return;
   }
-
-  if (kind === "subtab") {
-    const { t } = getSelected();
-    const s = t?.subtabs?.find((x) => x.id === id);
-    const name = await openLabelDialog({ title: "Edit Sub-Tab", value: s?.name || "" });
-    if (!name) return;
-    renameSubTab(id, name);
-    toast("Sub-Tab renamed.");
-    await refresh();
-    return;
-  }
-
-  if (kind === "tile") {
-    return onEditTile(id);
-  }
-}
-
-async function onDeleteLabel(kind, id) {
-  if (kind === "category") deleteCategory(id);
-  if (kind === "tab") deleteTab(id);
-  if (kind === "subtab") deleteSubTab(id);
-  toast("Deleted.");
-  await refresh();
 }
 
 function wireEvents() {
-  // Capture-phase click handler: survives stopPropagation in bubbling phase
-  document.addEventListener(
-    "click",
-    async (e) => {
-      try {
-        const el = getElementTarget(e.target);
-        if (!el) return;
+  document.addEventListener("click", async (e) => {
+    const el = getElementTarget(e.target);
+    const btn = el?.closest?.("button");
 
-        // Selection chips
-        const btn = el.closest?.("button");
+    try {
+      if (btn?.id === "lp-add-category") return await onAddCategory();
+      if (btn?.id === "lp-add-tab") return await onAddTab();
+      if (btn?.id === "lp-add-subtab") return await onAddSubTab();
+      if (btn?.id === "lp-add-tile") return await onAddTile();
 
-        if (btn?.dataset?.lpSelectCategory) {
-          selectCategory(btn.dataset.lpSelectCategory);
-          return await refresh();
-        }
-        if (btn?.dataset?.lpSelectTab) {
-          selectTab(btn.dataset.lpSelectTab);
-          return await refresh();
-        }
-        if (btn?.dataset?.lpSelectSubtab) {
-          selectSubTab(btn.dataset.lpSelectSubtab);
-          return await refresh();
-        }
-
-        // Tile open
-        const tileEl = el.closest?.("[data-lp-tile-open]");
-        if (tileEl?.dataset?.lpTileOpen) return openTile(tileEl.dataset.lpTileOpen);
-      } catch (err) {
-        console.error("Click handler error:", err);
-        toast("Click error — check console.");
+      if (btn?.dataset?.lpSelectCategory) {
+        selectCategory(btn.dataset.lpSelectCategory);
+        return await refresh();
       }
-    },
-    true
-  );
+      if (btn?.dataset?.lpSelectTab) {
+        selectTab(btn.dataset.lpSelectTab);
+        return await refresh();
+      }
+      if (btn?.dataset?.lpSelectSubtab) {
+        selectSubTab(btn.dataset.lpSelectSubtab);
+        return await refresh();
+      }
 
-  // Right-click for edit
+      const tileEl = el?.closest?.("[data-lp-tile-open]");
+      if (tileEl?.dataset?.lpTileOpen) return openTile(tileEl.dataset.lpTileOpen);
+    } catch (err) {
+      console.error("Click handler error:", err);
+      toast("Click error — check console.");
+    }
+  }, true);
+
   document.addEventListener("contextmenu", async (e) => {
     const el = e.target?.closest?.("[data-lp-edit-kind]");
     if (!el) return;
@@ -286,13 +262,12 @@ function wireEvents() {
     if (!kind || !id) return;
 
     e.preventDefault();
+    e.stopPropagation();
 
-    if (e.shiftKey) return onDeleteLabel(kind, id);
-    return onEditLabel(kind, id);
-  });
+    return onRightClickEdit(kind, id);
+  }, true);
 
-  // Dev reset shortcut
-  document.addEventListener("keydown", async (e) => {
+  window.addEventListener("keydown", async (e) => {
     if (e.ctrlKey && e.shiftKey && e.code === "KeyR") {
       e.preventDefault();
       await resetState();
@@ -307,6 +282,8 @@ async function boot() {
   initDialog();
   initTileDialog();
   initLabelDialog();
+  initDnd({ refresh });
+
   await loadState();
   ensureDefaultState();
   wireEvents();

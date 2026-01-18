@@ -19,8 +19,9 @@ function buildPlusTile() {
   const plus = document.createElement("div");
   plus.className = "lp-plus";
   plus.textContent = "+";
-
   btn.appendChild(plus);
+
+  // IMPORTANT: no DnD dataset on the + tile
   return btn;
 }
 
@@ -28,15 +29,20 @@ function buildTileCard(tile) {
   const btn = document.createElement("button");
   btn.className = "lp-tile";
   btn.type = "button";
+
+  // open/edit
+  btn.dataset.lpTileOpen = tile.id;
   btn.dataset.lpEditKind = "tile";
   btn.dataset.lpEditId = tile.id;
-  btn.dataset.lpTileOpen = tile.id;
+
+  // DnD (THIS is what makes tile dragging possible)
+  btn.dataset.lpDndType = "tile";
+  btn.dataset.lpDndId = tile.id;
 
   const img = document.createElement("img");
   img.className = "lp-tile-icon";
   img.alt = "";
 
-  // Prefer stored icon; else use favicon from URL
   const iconUrl = tile.icon?.trim()
     ? tile.icon.trim()
     : (tile.url ? `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(tile.url)}&sz=128` : "");
@@ -61,16 +67,17 @@ export function render() {
   const st = getState();
   const { c, t } = getSelected();
   const tiles = getTilesForSelection();
+
   const app = document.getElementById("app");
   app.innerHTML = "";
 
-  const makeRow = (title) => {
+  const makeRow = (titleText) => {
     const row = document.createElement("div");
     row.className = "lp-row";
 
     const left = document.createElement("div");
     left.className = "lp-row-left";
-    left.textContent = title;
+    left.textContent = titleText;
 
     const mid = document.createElement("div");
     mid.className = "lp-row-mid";
@@ -84,14 +91,20 @@ export function render() {
   {
     const mid = makeRow("Categories");
     st.categories.forEach((cat) => {
+      const locked = (cat.name || "").trim().toLowerCase() === "general";
       mid.appendChild(
         chip(cat.name, cat.id === st.selectedCategoryId, {
           lpSelectCategory: cat.id,
           lpEditKind: "category",
-          lpEditId: cat.id
+          lpEditId: cat.id,
+
+          lpDndType: "category",
+          lpDndId: cat.id,
+          lpDndLocked: locked ? "1" : "0"
         })
       );
     });
+
     const add = chip("+", false);
     add.id = "lp-add-category";
     add.classList.add("add");
@@ -102,14 +115,20 @@ export function render() {
   {
     const mid = makeRow("Tabs");
     (c?.tabs || []).forEach((tab) => {
+      const locked = (tab.name || "").trim().toLowerCase() === "all";
       mid.appendChild(
         chip(tab.name, tab.id === st.selectedTabId, {
           lpSelectTab: tab.id,
           lpEditKind: "tab",
-          lpEditId: tab.id
+          lpEditId: tab.id,
+
+          lpDndType: "tab",
+          lpDndId: tab.id,
+          lpDndLocked: locked ? "1" : "0"
         })
       );
     });
+
     const add = chip("+", false);
     add.id = "lp-add-tab";
     add.classList.add("add");
@@ -120,21 +139,27 @@ export function render() {
   {
     const mid = makeRow("Sub-tabs");
     (t?.subtabs || []).forEach((sub) => {
+      const locked = (sub.name || "").trim().toLowerCase() === "all";
       mid.appendChild(
         chip(sub.name, sub.id === st.selectedSubTabId, {
           lpSelectSubtab: sub.id,
           lpEditKind: "subtab",
-          lpEditId: sub.id
+          lpEditId: sub.id,
+
+          lpDndType: "subtab",
+          lpDndId: sub.id,
+          lpDndLocked: locked ? "1" : "0"
         })
       );
     });
+
     const add = chip("+", false);
     add.id = "lp-add-subtab";
     add.classList.add("add");
     mid.appendChild(add);
   }
 
-  // Tiles: ONLY grid (plus tile + tiles)
+  // Tiles
   const tilesWrap = document.createElement("div");
   tilesWrap.className = "lp-tiles";
 
@@ -142,8 +167,9 @@ export function render() {
   grid.className = "lp-tile-grid";
   if (tiles.length === 0) grid.classList.add("empty");
 
-  // Put the + tile LAST (always)
   tiles.forEach((tile) => grid.appendChild(buildTileCard(tile)));
+
+  // + tile always last
   grid.appendChild(buildPlusTile());
 
   tilesWrap.appendChild(grid);

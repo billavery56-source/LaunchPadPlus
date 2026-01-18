@@ -32,6 +32,16 @@
   font-weight: 800;
 }
 
+/* Drag hint */
+.lp-chip[data-lp-dnd-id] { cursor: grab; }
+
+/* 🔧 FIX: locked chips should NOT show the "no" icon */
+.lp-chip[data-lp-dnd-locked="1"] { cursor: pointer; opacity: 0.95; }
+
+/* Drop indicators (left/right border colors) */
+.lp-chip.lp-drop-left  { border-left: 6px solid #5a3a12; }
+.lp-chip.lp-drop-right { border-right: 6px solid #5a3a12; }
+
 .lp-chip:hover { background: #1e1e1e; }
 
 .lp-chip.selected {
@@ -44,35 +54,28 @@
   text-align: center;
   font-size: 18px;
   padding: 6px 0;
+  cursor: pointer;
 }
 
-/* ===== Tiles area =====
-   - NO background
-   - starts top-left
-   - padding around the grid
-   - space between tiles
-*/
+/* ===== Tiles area ===== */
 .lp-tiles {
   margin-top: 14px;
-  padding: 0;            /* no container padding */
-  background: transparent; /* no background */
-  border: none;          /* no border */
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 /* Grid starts upper-left with padding and spacing */
 .lp-tile-grid {
-  padding: 14px; /* "not completely in the corner" */
+  padding: 14px;
   display: grid;
   grid-template-columns: repeat(auto-fill, 200px);
-  gap: 14px;              /* margin/space between tiles */
-  justify-content: start; /* left */
-  align-content: start;   /* top */
+  gap: 14px;
+  justify-content: start;
+  align-content: start;
 }
 
-/* Empty: still upper-left (no centering) */
-.lp-tile-grid.empty {
-  min-height: 260px;      /* just gives some breathing room */
-}
+.lp-tile-grid.empty { min-height: 260px; }
 
 /* Tile card 200x200 */
 .lp-tile {
@@ -92,6 +95,18 @@
   justify-content: center;
   gap: 10px;
 }
+
+.lp-tile[data-lp-dnd-id] { cursor: grab; }
+
+/* Drop indicators for tiles */
+.lp-tile.lp-drop-left  { box-shadow: inset 6px 0 0 #5a3a12; }
+.lp-tile.lp-drop-right { box-shadow: inset -6px 0 0 #5a3a12; }
+
+/* While dragging */
+.lp-dragging { opacity: 0.45; transform: scale(0.985); }
+
+/* Disable text selection during drag */
+body.lp-no-select { user-select: none; }
 
 .lp-tile:hover { background: #171717; }
 

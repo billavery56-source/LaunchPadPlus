@@ -9,6 +9,14 @@ function isAllLabel(name) {
   return (name || "").trim().toLowerCase() === "all";
 }
 
+function findTabAnywhere(tabId) {
+  for (const c of (state?.categories || [])) {
+    const t = (c.tabs || []).find(x => x.id === tabId);
+    if (t) return { category: c, tab: t };
+  }
+  return null;
+}
+
 function findTileAndParent(tileId) {
   if (!state?.categories) return null;
   for (const c of state.categories) {
@@ -88,7 +96,9 @@ function normalizeState() {
       if (t.subtabs.length === 0) t.subtabs.push({ id: uid("sub"), name: "All", tiles: [] });
     }
 
-    if (c.tabs.length === 0) c.tabs.push({ id: uid("tab"), name: "All", subtabs: [{ id: uid("sub"), name: "All", tiles: [] }] });
+    if (c.tabs.length === 0) {
+      c.tabs.push({ id: uid("tab"), name: "All", subtabs: [{ id: uid("sub"), name: "All", tiles: [] }] });
+    }
   }
 
   if (state.categories.length === 0) {
@@ -101,7 +111,6 @@ function normalizeState() {
     state.selectedSubTabId = subId;
   }
 
-  // selections
   const firstCat = state.categories[0];
   if (!state.selectedCategoryId || !state.categories.some(c => c.id === state.selectedCategoryId)) {
     state.selectedCategoryId = firstCat.id;
@@ -229,14 +238,13 @@ export function getTilesForSelection() {
   if (!c) return [];
   const t = c.tabs.find(x => x.id === state.selectedTabId) || null;
   if (t && isAllLabel(t.name)) {
-    // "All" tab means: show every tile in the selected Category (across all tabs/subtabs).
     return getAllTilesInCategory(c.id);
   }
   const sub = findSubTab(state.selectedCategoryId, state.selectedTabId, state.selectedSubTabId);
   return sub?.tiles || [];
 }
 
-// Rename/Delete (for right-click edit)
+// Rename/Delete
 export function renameCategory(catId, newName) {
   const c = findCategory(catId);
   if (!c) return false;
@@ -253,20 +261,18 @@ export function deleteCategory(catId) {
 }
 
 export function renameTab(tabId, newName) {
-  const c = findCategory(state.selectedCategoryId);
-  if (!c) return false;
-  const t = c.tabs.find(t => t.id === tabId);
-  if (!t) return false;
-  t.name = newName;
+  const hit = findTabAnywhere(tabId);
+  if (!hit) return false;
+  hit.tab.name = newName;
   return true;
 }
 
 export function deleteTab(tabId) {
-  const c = findCategory(state.selectedCategoryId);
-  if (!c) return false;
-  const idx = c.tabs.findIndex(t => t.id === tabId);
+  const hit = findTabAnywhere(tabId);
+  if (!hit) return false;
+  const idx = hit.category.tabs.findIndex(t => t.id === tabId);
   if (idx === -1) return false;
-  c.tabs.splice(idx, 1);
+  hit.category.tabs.splice(idx, 1);
   normalizeState();
   return true;
 }
@@ -288,4 +294,142 @@ export function deleteSubTab(subId) {
   t.subtabs.splice(idx, 1);
   normalizeState();
   return true;
+}
+
+/* ===========================
+   New: Reassignment helpers
+   =========================== */
+
+export function getTileLocation(tileId) {
+  const hit = findTileAndParent(tileId);
+  if (!hit) return null;
+  return {
+    categoryId: hit.category.id,
+    tabId: hit.tab.id,
+    subtabId: hit.subtab.id
+  };
+}
+
+export function moveTileTo(tileId, destCategoryId, destTabId, destSubtabId) {
+  const hit = findTileAndParent(tileId);
+  if (!hit) return false;
+
+  const destSub = findSubTab(destCategoryId, destTabId, destSubtabId);
+  if (!destSub) return false;
+
+  // No-op
+  if (hit.category.id === destCategoryId && hit.tab.id === destTabId && hit.subtab.id === destSubtabId) {
+    return true;
+  }
+
+  const fromIdx = hit.subtab.tiles.findIndex(t => t.id === tileId);
+  if (fromIdx === -1) return false;
+
+  const [obj] = hit.subtab.tiles.splice(fromIdx, 1);
+  if (!obj) return false;
+
+  destSub.tiles.push(obj);
+  return true;
+}
+
+export function moveTabToCategory(tabId, destCategoryId) {
+  const hit = findTabAnywhere(tabId);
+  if (!hit) return false;
+
+  const fromCat = hit.category;
+  const tabObj = hit.tab;
+  const destCat = findCategory(destCategoryId);
+  if (!destCat) return false;
+
+  // Don't move if already there
+  if (fromCat.id === destCat.id) return true;
+
+  // Remove from source
+  const idx = fromCat.tabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return false;
+  fromCat.tabs.splice(idx, 1);
+
+  // Insert into dest after its "All" tab (if present)
+  const allIdx = destCat.tabs.findIndex(t => (t.name || "").trim().toLowerCase() === "all");
+  const insertAt = allIdx === -1 ? destCat.tabs.length : Math.min(destCat.tabs.length, allIdx + 1);
+  destCat.tabs.splice(insertAt, 0, tabObj);
+
+  // If the moved tab is currently selected, keep selection stable
+  if (state.selectedTabId === tabId) {
+    state.selectedCategoryId = destCat.id;
+    state.selectedTabId = tabId;
+    state.selectedSubTabId = tabObj.subtabs?.[0]?.id || null;
+  }
+
+  normalizeState();
+  return true;
+}
+
+/* ===========================
+   Drag & Drop reorder helpers
+   =========================== */
+
+function moveRelative(list, dragId, targetId, side) {
+  if (!Array.isArray(list) || list.length < 2) return false;
+  const from = list.findIndex(x => x.id === dragId);
+  const target = list.findIndex(x => x.id === targetId);
+  if (from === -1 || target === -1 || from === target) return false;
+
+  let insertAt = target + (side === "right" ? 1 : 0);
+  const [item] = list.splice(from, 1);
+  if (!item) return false;
+  if (from < insertAt) insertAt -= 1;
+
+  if (insertAt < 0) insertAt = 0;
+  if (insertAt > list.length) insertAt = list.length;
+
+  list.splice(insertAt, 0, item);
+  return true;
+}
+
+function pinFirst(list, predicate) {
+  if (!Array.isArray(list) || list.length === 0) return;
+  const idx = list.findIndex(predicate);
+  if (idx > 0) {
+    const [item] = list.splice(idx, 1);
+    if (item) list.unshift(item);
+  }
+}
+
+function pinFixed() {
+  pinFirst(state.categories, c => (c?.name || "").trim().toLowerCase() === "general");
+  for (const c of state.categories) {
+    pinFirst(c.tabs, t => (t?.name || "").trim().toLowerCase() === "all");
+    for (const t of (c.tabs || [])) {
+      pinFirst(t.subtabs, s => (s?.name || "").trim().toLowerCase() === "all");
+    }
+  }
+}
+
+export function moveCategoryRelative(dragId, targetId, side) {
+  const moved = moveRelative(state.categories, dragId, targetId, side);
+  if (moved) pinFixed();
+  return moved;
+}
+
+export function moveTabRelative(dragId, targetId, side) {
+  const c = findCategory(state.selectedCategoryId);
+  if (!c) return false;
+  const moved = moveRelative(c.tabs, dragId, targetId, side);
+  if (moved) pinFixed();
+  return moved;
+}
+
+export function moveSubTabRelative(dragId, targetId, side) {
+  const t = findTab(state.selectedCategoryId, state.selectedTabId);
+  if (!t) return false;
+  const moved = moveRelative(t.subtabs, dragId, targetId, side);
+  if (moved) pinFixed();
+  return moved;
+}
+
+export function moveTileRelative(dragId, targetId, side) {
+  const sub = findSubTab(state.selectedCategoryId, state.selectedTabId, state.selectedSubTabId);
+  if (!sub) return false;
+  return moveRelative(sub.tiles, dragId, targetId, side);
 }

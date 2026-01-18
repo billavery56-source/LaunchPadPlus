@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LaunchPadPlus (DEV CLEAN)</title>
+    <title>LaunchPadPlus</title>
     <script src="scripts/boot.js" defer></script>
   </head>
 
@@ -42,8 +42,23 @@
         </header>
 
         <div id="lp-tile-body">
+          <!-- Location -->
+          <div class="lp-fieldset">
+            <div class="lp-fieldset-title">Location</div>
+
+            <label for="lp-tile-category">Category</label>
+            <select id="lp-tile-category"></select>
+
+            <label for="lp-tile-tab">Tab</label>
+            <select id="lp-tile-tab"></select>
+
+            <label for="lp-tile-subtab">Sub-tab</label>
+            <select id="lp-tile-subtab"></select>
+          </div>
+
+          <!-- Content -->
           <label for="lp-tile-name">Title</label>
-          <input id="lp-tile-name" type="text" autocomplete="off" placeholder="e.g., Amazon" />
+          <input id="lp-tile-name" type="text" autocomplete="off" placeholder="e.g., Best Buy" />
 
           <label for="lp-tile-url">URL</label>
           <input id="lp-tile-url" type="text" autocomplete="off" placeholder="https://..." />
@@ -61,7 +76,7 @@
           </div>
 
           <div class="lp-hint" id="lp-tile-hint">
-            If you don’t choose an icon, we’ll use the site favicon.
+            Tip: Title auto-fills URL. Changing the Tab dropdown also influences the suggested URL.
           </div>
         </div>
 
@@ -86,6 +101,12 @@
         <div id="lp-label-body">
           <label for="lp-label-input">Name</label>
           <input id="lp-label-input" type="text" autocomplete="off" />
+
+          <!-- Only shown when editing a TAB -->
+          <div id="lp-label-category-row" class="lp-hidden">
+            <label for="lp-label-category">Category</label>
+            <select id="lp-label-category"></select>
+          </div>
         </div>
 
         <footer id="lp-label-footer">

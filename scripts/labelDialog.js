@@ -1,16 +1,22 @@
 // scripts/labelDialog.js
 import { toast } from "./dialog.js";
+import { getState } from "./state.js";
 
 const root = () => document.getElementById("lp-label-root");
 const backdrop = () => document.getElementById("lp-label-backdrop");
 const titleEl = () => document.getElementById("lp-label-title");
 const inputEl = () => document.getElementById("lp-label-input");
+
+const catRow = () => document.getElementById("lp-label-category-row");
+const catSel = () => document.getElementById("lp-label-category");
+
 const btnX = () => document.getElementById("lp-label-x");
 const btnCancel = () => document.getElementById("lp-label-cancel");
 const btnSave = () => document.getElementById("lp-label-save");
 const btnDelete = () => document.getElementById("lp-label-delete");
 
 let resolver = null;
+let inited = false;
 
 function open() {
   const r = root();
@@ -32,7 +38,21 @@ function close(val) {
   }
 }
 
+function fillSelect(selectEl, items, selectedId) {
+  selectEl.innerHTML = "";
+  for (const it of items) {
+    const o = document.createElement("option");
+    o.value = it.id;
+    o.textContent = it.name;
+    selectEl.appendChild(o);
+  }
+  if (selectedId && items.some(x => x.id === selectedId)) selectEl.value = selectedId;
+}
+
 export function initLabelDialog() {
+  if (inited) return;
+  inited = true;
+
   const closeHandler = () => close(null);
   backdrop()?.addEventListener("click", closeHandler);
   btnX()?.addEventListener("click", closeHandler);
@@ -53,7 +73,7 @@ export function initLabelDialog() {
   }, true);
 }
 
-export function openLabelDialog({ kind, currentName } = {}) {
+export function openLabelDialog({ kind, currentName, currentCategoryId } = {}) {
   const titleMap = {
     category: "Edit Category",
     tab: "Edit Tab",
@@ -63,6 +83,16 @@ export function openLabelDialog({ kind, currentName } = {}) {
   titleEl().textContent = titleMap[kind] || "Edit";
   inputEl().value = currentName || "";
 
+  // Only show Category dropdown when editing a TAB
+  if (kind === "tab") {
+    const st = getState();
+    const items = st.categories.map(c => ({ id: c.id, name: c.name }));
+    fillSelect(catSel(), items, currentCategoryId || st.selectedCategoryId);
+    catRow().classList.remove("lp-hidden");
+  } else {
+    catRow().classList.add("lp-hidden");
+  }
+
   btnSave().onclick = () => {
     const v = (inputEl().value || "").trim();
     if (!v) {
@@ -70,12 +100,14 @@ export function openLabelDialog({ kind, currentName } = {}) {
       inputEl().focus();
       return;
     }
-    close({ action: "save", name: v });
+
+    const payload = { action: "save", name: v };
+    if (kind === "tab") payload.categoryId = catSel().value;
+
+    close(payload);
   };
 
-  btnDelete().onclick = () => {
-    close({ action: "delete" });
-  };
+  btnDelete().onclick = () => close({ action: "delete" });
 
   open();
   setTimeout(() => {
