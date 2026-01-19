@@ -65,6 +65,7 @@ export function render() {
   const st = getState();
   const { c, t } = getSelected();
   const tiles = getTilesForSelection();
+
   const app = document.getElementById("app");
   app.innerHTML = "";
 
@@ -81,23 +82,17 @@ export function render() {
 
     row.append(left, mid);
 
-    let right = null;
-    if (withRight) {
-      right = document.createElement("div");
-      right.className = "lp-row-right";
-      row.appendChild(right);
-    } else {
-      right = document.createElement("div");
-      right.className = "lp-row-right";
-      row.appendChild(right);
-      right.style.visibility = "hidden";
-    }
+    const right = document.createElement("div");
+    right.className = "lp-row-right";
+    row.appendChild(right);
+
+    if (!withRight) right.style.visibility = "hidden";
 
     app.appendChild(row);
     return { mid, right };
   };
 
-  // Categories (with indicator + buttons)
+  // Categories (with right-side buttons)
   {
     const { mid, right } = makeRow("Categories", true);
 
@@ -120,11 +115,18 @@ export function render() {
     add.classList.add("add");
     mid.appendChild(add);
 
+    // Right-side tools
     const indicator = document.createElement("div");
     indicator.id = "lp-save-indicator";
     indicator.className = "lp-indicator off";
     indicator.textContent = "Auto: Off";
     indicator.title = "Auto-save status";
+
+    const helpBtn = document.createElement("button");
+    helpBtn.id = "lp-help-btn";
+    helpBtn.className = "lp-btn";
+    helpBtn.type = "button";
+    helpBtn.textContent = "Help";
 
     const backupBtn = document.createElement("button");
     backupBtn.id = "lp-backup-btn";
@@ -138,7 +140,7 @@ export function render() {
     themeBtn.type = "button";
     themeBtn.textContent = "Theme";
 
-    right.append(indicator, backupBtn, themeBtn);
+    right.append(indicator, helpBtn, backupBtn, themeBtn);
   }
 
   // Tabs

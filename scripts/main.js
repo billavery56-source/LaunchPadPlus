@@ -32,6 +32,7 @@ import { render } from "./render.js";
 import { initDnd } from "./dnd.js";
 import { initBackup, openBackupDialog, notifyStateChanged, bindAutoSaveIndicator } from "./backup.js";
 import { initTheme, openThemeDialog, applySavedTheme } from "./theme.js";
+import { initHelp, openHelpDialog } from "./help.js";
 
 function guessUrlFromTabName(name) {
   const n = (name || "").trim();
@@ -62,11 +63,12 @@ function getElementTarget(raw) {
 async function refresh({ changed = true } = {}) {
   render();
 
-  // Buttons recreated on render
+  // Buttons are recreated on each render
   document.getElementById("lp-backup-btn")?.addEventListener("click", () => openBackupDialog());
   document.getElementById("lp-theme-btn")?.addEventListener("click", () => openThemeDialog());
+  document.getElementById("lp-help-btn")?.addEventListener("click", () => openHelpDialog());
 
-  // Indicator recreated on render
+  // Indicator recreated on each render
   bindAutoSaveIndicator(document.getElementById("lp-save-indicator"));
 
   await saveState();
@@ -75,7 +77,11 @@ async function refresh({ changed = true } = {}) {
 }
 
 async function onAddCategory() {
-  const name = await promptName({ title: "Add New Category", label: "Category name", placeholder: "e.g., Shopping" });
+  const name = await promptName({
+    title: "Add New Category",
+    label: "Category name",
+    placeholder: "e.g., Shopping"
+  });
   if (!name) return;
   addCategory(name);
   toast("Category added.");
@@ -85,7 +91,11 @@ async function onAddCategory() {
 async function onAddTab() {
   const st = getState();
   if (!st.selectedCategoryId) return toast("Select a Category first.");
-  const name = await promptName({ title: "Add New Tab", label: "Tab name", placeholder: "e.g., Best Buy" });
+  const name = await promptName({
+    title: "Add New Tab",
+    label: "Tab name",
+    placeholder: "e.g., Best Buy"
+  });
   if (!name) return;
   addTab(name);
   toast("Tab added.");
@@ -95,7 +105,11 @@ async function onAddTab() {
 async function onAddSubTab() {
   const st = getState();
   if (!st.selectedCategoryId || !st.selectedTabId) return toast("Select a Category and a Tab first.");
-  const name = await promptName({ title: "Add New Sub-Tab", label: "Sub-Tab name", placeholder: "e.g., Deals" });
+  const name = await promptName({
+    title: "Add New Sub-Tab",
+    label: "Sub-Tab name",
+    placeholder: "e.g., Deals"
+  });
   if (!name) return;
   addSubTab(name);
   toast("Sub-Tab added.");
@@ -178,12 +192,14 @@ async function onRightClickEdit(kind, id) {
 
   if (result.action === "save") {
     if (kind === "category") renameCategory(id, result.name);
+
     if (kind === "tab") {
       renameTab(id, result.name);
       if (result.categoryId && result.categoryId !== currentCategoryId) {
         moveTabToCategory(id, result.categoryId);
       }
     }
+
     if (kind === "subtab") renameSubTab(id, result.name);
 
     toast("Saved.");
@@ -250,9 +266,9 @@ async function boot() {
   initDialog();
   initTileDialog();
   initLabelDialog();
+  initHelp();
   initDnd({ refresh });
 
-  // Theme (apply saved + hook theme dialog)
   await initTheme();
   await applySavedTheme();
 

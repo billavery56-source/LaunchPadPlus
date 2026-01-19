@@ -115,7 +115,7 @@
       </section>
     </div>
 
-    <!-- Backup dialog (keep your existing) -->
+    <!-- Backup dialog -->
     <div id="lp-backup-root" class="lp-hidden" aria-hidden="true" style="display:none;">
       <div id="lp-backup-backdrop"></div>
       <section id="lp-backup-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus backup dialog">
@@ -125,9 +125,7 @@
         </header>
 
         <div id="lp-backup-body">
-          <div class="lp-hint">
-            Tip: If you’ve got an external drive, saving backups there is a great idea.
-          </div>
+          <div class="lp-hint">Tip: If you’ve got an external drive, saving backups there is a great idea.</div>
 
           <div class="lp-backup-row">
             <div class="lp-backup-label">Backup file</div>
@@ -147,9 +145,7 @@
             </label>
           </div>
 
-          <div class="lp-hint">
-            Auto-save uses the same chosen file. First time you enable it, you’ll be asked to choose where to save.
-          </div>
+          <div class="lp-hint">Auto-save uses the same chosen file. First time you enable it, you’ll be asked to choose where to save.</div>
         </div>
 
         <footer id="lp-backup-footer">
@@ -188,20 +184,9 @@
           <div id="lp-theme-preset-wrap" class="lp-fieldset" style="display:none;">
             <div class="lp-fieldset-title">Preset</div>
 
-            <label class="lp-check">
-              <input type="radio" name="lp-theme-preset" value="dark" />
-              <span>Dark</span>
-            </label>
-
-            <label class="lp-check">
-              <input type="radio" name="lp-theme-preset" value="medium" />
-              <span>Medium</span>
-            </label>
-
-            <label class="lp-check">
-              <input type="radio" name="lp-theme-preset" value="light" />
-              <span>Light</span>
-            </label>
+            <label class="lp-check"><input type="radio" name="lp-theme-preset" value="dark" /><span>Dark</span></label>
+            <label class="lp-check"><input type="radio" name="lp-theme-preset" value="medium" /><span>Medium</span></label>
+            <label class="lp-check"><input type="radio" name="lp-theme-preset" value="light" /><span>Light</span></label>
           </div>
 
           <div id="lp-theme-custom-wrap" class="lp-fieldset" style="display:none;">
@@ -216,6 +201,166 @@
           <div class="lp-spacer"></div>
           <button id="lp-theme-close" type="button" class="lp-btn">Close</button>
           <button id="lp-theme-save" type="button" class="lp-btn primary">Done</button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Help dialog (CUSTOM accordion) -->
+    <div id="lp-help-root" class="lp-hidden" aria-hidden="true" style="display:none;">
+      <div id="lp-help-backdrop"></div>
+      <section id="lp-help-modal" role="dialog" aria-modal="true" aria-label="LaunchPadPlus help dialog">
+        <header id="lp-help-header">
+          <div id="lp-help-title">Help</div>
+          <button id="lp-help-x" type="button" title="Close" aria-label="Close">✕</button>
+        </header>
+
+        <div id="lp-help-body">
+          <div class="lp-hint">
+            LaunchPadPlus is built for quick organizing. If something feels “broken,” it’s usually a rule. Here’s the cheat-sheet.
+          </div>
+
+          <div class="lp-help-tools">
+            <button id="lp-help-expand" type="button" class="lp-btn">Expand all</button>
+            <button id="lp-help-collapse" type="button" class="lp-btn">Collapse all</button>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Getting started (the big idea)
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <p><b>Think of it like folders:</b> Category → Tab → Sub-tab → Tiles.</p>
+              <ul>
+                <li>Select a <b>Category</b> to switch groups (Shopping, Entertainment, etc.).</li>
+                <li>Select a <b>Tab</b> to narrow down inside that category.</li>
+                <li>Select a <b>Sub-tab</b> to narrow down further (optional).</li>
+                <li>Tiles are your clickable shortcuts.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Adding tiles
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li>Click the <b>+</b> tile (always last) to add a tile.</li>
+                <li>Title can auto-suggest the URL, but you can edit it.</li>
+                <li>You can choose an icon (or it can use the site favicon).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Editing & deleting things
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li><b>Right-click</b> a Category / Tab / Sub-tab / Tile to edit it.</li>
+                <li>Tiles have a full edit dialog (title, URL, icon, and location).</li>
+                <li>Some items are protected (see “Locked items”).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Drag & drop ordering (click + hold)
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li><b>Click and hold</b>, then drag left/right, and release to drop.</li>
+                <li>You’ll see a <b>left/right border highlight</b> showing where it will land.</li>
+                <li>You can reorder within the same row only (Categories stay in Categories, etc.).</li>
+                <li>Tiles can always be reordered in the Tiles grid.</li>
+                <li>You cannot drag the “Add” buttons or the “+” tile.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Locked items (not broken)
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li><b>General</b> Category is locked.</li>
+                <li><b>All</b> Tabs (and All Sub-tabs) are locked.</li>
+                <li>“Add” buttons and the “+” tile are not movable.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Backup & restore
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li>Click <b>Backup</b> to save a full layout file (everything).</li>
+                <li><b>Choose file</b> once, then saves go to that same file.</li>
+                <li><b>Load backup</b> lets you restore a saved layout.</li>
+                <li>Tip: saving backups to an external drive is a solid idea.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Auto-save indicator
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li><b>Auto: Off</b> — auto-save is disabled.</li>
+                <li><b>Auto: Pending</b> — a change happened and a save is queued.</li>
+                <li><b>Auto: Saving…</b> — writing the backup file.</li>
+                <li><b>Auto: Saved</b> — up to date.</li>
+                <li><b>Auto: Needs file</b> — auto-save is on, but you haven’t chosen a save file yet.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Theme
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li>Click <b>Theme</b> to pick a preset or choose your own background color.</li>
+                <li>The page background changes, and all UI surfaces adapt to match.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lp-acc">
+            <button class="lp-acc-summary" type="button" aria-expanded="false">
+              Troubleshooting (common “it’s broken” moments)
+              <span class="lp-acc-arrow">▾</span>
+            </button>
+            <div class="lp-acc-body" aria-hidden="true">
+              <ul>
+                <li><b>Can’t drag something?</b> It might be locked (General / All / Add buttons).</li>
+                <li><b>Right-click does nothing?</b> Try right-clicking the button/tile area, not the empty page.</li>
+                <li><b>Auto-save says “Needs file”</b> → open Backup and click “Choose file…”.</li>
+                <li><b>Restore didn’t work</b> → make sure the file is a LaunchPadPlus backup JSON.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <footer id="lp-help-footer">
+          <div class="lp-spacer"></div>
+          <button id="lp-help-close" type="button" class="lp-btn primary">Close</button>
         </footer>
       </section>
     </div>
